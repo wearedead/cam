@@ -1,6 +1,6 @@
 <?php
 // Telegram Configuration
-$botToken = '8159189472:AAEsEP1Ngxi6wHBLyvU97XlzbSJIVzJk18E';
+$botToken = '7584772002:AAHSeKgrC7ewjEvfGhrDrSKAHg9ulVlRw1A';
 $chatId = ''; // This needs to be filled with your chat ID or a group chat ID
 
 // Function to get the chat ID if not already known
