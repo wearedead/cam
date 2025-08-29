@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Health Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .status {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .status-up {
+            background-color: #4CAF50;
+        }
+        .status-down {
+            background-color: #F44336;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .metric-card {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .metric-card h3 {
+            margin-top: 0;
+            color: #555;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .metric-card p {
+            margin-bottom: 0;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .memory-metrics {
+            margin-top: 20px;
+        }
+        .memory-bar {
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        .memory-fill {
+            height: 100%;
+            background-color: #2196F3;
+            transition: width 0.5s ease-in-out;
+        }
+        .memory-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #777;
+        }
+        .ping-history {
+            margin-top: 20px;
+        }
+        .ping-graph {
+            height: 100px;
+            background-color: #f9f9f9;
+            margin-top: 10px;
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .ping-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #2196F3;
+            transform: translate(-50%, -50%);
+        }
+        .ping-failed {
+            background-color: #F44336;
+        }
+        .ping-time {
+            position: absolute;
+            bottom: -20px;
+            font-size: 10px;
+            transform: translateX(-50%);
+            color: #777;
+        }
+        .last-updated {
+            text-align: center;
+            color: #777;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        .refresh-button {
+            display: block;
+            margin: 20px auto 0;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .refresh-button:hover {
+            background-color: #45a049;
+        }
+        @media (max-width: 500px) {
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Service Health Dashboard</h1>
+        
+        <div class="status">
+            <div class="status-indicator status-up" id="status-light"></div>
+            <span id="status-text">Service is UP</span>
+        </div>
+        
+        <div class="metrics">
+            <div class="metric-card">
+                <h3>Uptime</h3>
+                <p id="uptime">--</p>
+            </div>
+            <div class="metric-card">
+                <h3>Response Time</h3>
+                <p id="response-time">--</p>
+            </div>
+            <div class="metric-card">
+                <h3>Failed Pings</h3>
+                <p id="failed-pings">--</p>
+            </div>
+        </div>
+        
+        <div class="memory-metrics">
+            <h3>Memory Usage</h3>
+            <div class="memory-bar">
+                <div class="memory-fill" id="heap-used" style="width: 0%"></div>
+            </div>
+            <div class="memory-label">
+                <span>0</span>
+                <span id="heap-total">-- MB</span>
+            </div>
+        </div>
+        
+        <div class="ping-history">
+            <h3>Ping History (last 20 attempts)</h3>
+            <div class="ping-graph" id="ping-graph">
+                <!-- Ping dots will be added here by JavaScript -->
+            </div>
+        </div>
+        
+        <button class="refresh-button" id="refresh-btn">Refresh Data</button>
+        
+        <p class="last-updated">Last updated: <span id="last-updated">--</span></p>
+    </div>
+
+    <script>
+        // Store ping history
+        const pingHistory = [];
+        const MAX_HISTORY = 20;
+        
+        // Function to fetch health data
+        async function fetchHealthData() {
+            const startTime = Date.now();
+            try {
+                const response = await fetch('/health');
+                const responseTime = Date.now() - startTime;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateDashboard(data, responseTime);
+                    
+                    // Add to ping history
+                    pingHistory.push({
+                        time: new Date(),
+                        success: true,
+                        responseTime
+                    });
+                } else {
+                    handleError(response.status);
+                }
+            } catch (error) {
+                console.error('Error fetching health data:', error);
+                handleError('Network error');
+                
+                // Add failed ping to history
+                pingHistory.push({
+                    time: new Date(),
+                    success: false,
+                    responseTime: 0
+                });
+            }
+            
+            // Keep history at max length
+            if (pingHistory.length > MAX_HISTORY) {
+                pingHistory.shift();
+            }
+            
+            // Update ping graph
+            updatePingGraph();
+            
+            // Update last updated time
+            document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+        }
+        
+        // Function to update dashboard with health data
+        function updateDashboard(data, responseTime) {
+            // Update status
+            document.getElementById('status-light').className = 'status-indicator status-up';
+            document.getElementById('status-text').textContent = 'Service is UP';
+            
+            // Update metrics
+            const uptimeSeconds = data.uptime;
+            const days = Math.floor(uptimeSeconds / 86400);
+            const hours = Math.floor((uptimeSeconds % 86400) / 3600);
+            const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+            const seconds = Math.floor(uptimeSeconds % 60);
+            
+            let uptimeText = '';
+            if (days > 0) uptimeText += `${days}d `;
+            if (hours > 0 || days > 0) uptimeText += `${hours}h `;
+            if (minutes > 0 || hours > 0 || days > 0) uptimeText += `${minutes}m `;
+            uptimeText += `${seconds}s`;
+            
+            document.getElementById('uptime').textContent = uptimeText;
+            document.getElementById('response-time').textContent = `${responseTime}ms`;
+            document.getElementById('failed-pings').textContent = data.failedPings || '0';
+            
+            // Update memory usage
+            if (data.memory) {
+                const heapUsed = Math.round(data.memory.heapUsed / 1024 / 1024);
+                const heapTotal = Math.round(data.memory.heapTotal / 1024 / 1024);
+                const percentage = (data.memory.heapUsed / data.memory.heapTotal) * 100;
+                
+                document.getElementById('heap-used').style.width = `${percentage}%`;
+                document.getElementById('heap-total').textContent = `${heapTotal} MB`;
+            }
+        }
+        
+        // Function to handle errors
+        function handleError(error) {
+            document.getElementById('status-light').className = 'status-indicator status-down';
+            document.getElementById('status-text').textContent = `Service is DOWN: ${error}`;
+            
+            // Clear metrics
+            document.getElementById('uptime').textContent = '--';
+            document.getElementById('response-time').textContent = '--';
+        }
+        
+        // Function to update ping graph
+        function updatePingGraph() {
+            const graph = document.getElementById('ping-graph');
+            graph.innerHTML = '';
+            
+            const maxResponseTime = Math.max(
+                500, // Minimum scale (500ms)
+                ...pingHistory
+                    .filter(ping => ping.success)
+                    .map(ping => ping.responseTime)
+            );
+            
+            // Add ping dots
+            pingHistory.forEach((ping, index) => {
+                const dot = document.createElement('div');
+                dot.className = `ping-dot ${ping.success ? '' : 'ping-failed'}`;
+                
+                // Position horizontally based on index
+                const xPosition = (index / (MAX_HISTORY - 1)) * 100;
+                
+                // Position vertically based on response time (inverted, faster = higher)
+                let yPosition;
+                if (ping.success) {
+                    yPosition = 100 - ((ping.responseTime / maxResponseTime) * 80);
+                    // Limit to stay in view
+                    yPosition = Math.max(10, Math.min(90, yPosition));
+                } else {
+                    yPosition = 90; // Failed pings at bottom
+                }
+                
+                dot.style.left = `${xPosition}%`;
+                dot.style.top = `${yPosition}%`;
+                
+                // Add tooltip
+                dot.title = ping.success 
+                    ? `${ping.time.toLocaleTimeString()}: ${ping.responseTime}ms` 
+                    : `${ping.time.toLocaleTimeString()}: Failed`;
+                
+                // Add time label for some points
+                if (index % 5 === 0 || index === pingHistory.length - 1) {
+                    const timeLabel = document.createElement('div');
+                    timeLabel.className = 'ping-time';
+                    timeLabel.textContent = ping.time.toLocaleTimeString().replace(/:\d+ /, ' ');
+                    timeLabel.style.left = `${xPosition}%`;
+                    graph.appendChild(timeLabel);
+                }
+                
+                graph.appendChild(dot);
+            });
+        }
+        
+        // Initial fetch
+        fetchHealthData();
+        
+        // Set up refresh button
+        document.getElementById('refresh-btn').addEventListener('click', fetchHealthData);
+        
+        // Set up auto-refresh every 30 seconds (more frequent to prevent shutdowns)
+        setInterval(fetchHealthData, 30000);
+    </script>
+</body>
+</html>

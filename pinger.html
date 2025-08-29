@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Pinger</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        #log {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+            font-family: monospace;
+            margin-top: 20px;
+            background: #f5f5f5;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Aggressive Service Pinger</h1>
+    <p>This page helps prevent your service from shutting down due to inactivity.</p>
+    <p>Keep this page open in a browser tab to continuously ping: <br><strong id="service-url">https://camer-scda.onrender.com</strong></p>
+    
+    <div id="status" class="status">Initializing...</div>
+    
+    <div>
+        <button id="ping-now">Ping Now</button>
+        <button id="toggle-auto">Pause Auto-Ping</button>
+    </div>
+    
+    <p>
+        <label for="interval">Ping interval (seconds):</label>
+        <input type="number" id="interval" min="10" max="120" value="30">
+    </p>
+    
+    <div id="log"></div>
+    
+    <script>
+        const serviceUrl = 'https://camer-scda.onrender.com';
+        let pingCount = 0;
+        let errorCount = 0;
+        let autoPingEnabled = true;
+        let pingTimer;
+        
+        document.getElementById('service-url').textContent = serviceUrl;
+        
+        function addLog(message, isError = false) {
+            const log = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.innerHTML = `<small>[${time}]</small> ${message}`;
+            if (isError) entry.style.color = 'red';
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+            
+            // Keep log size reasonable
+            while (log.childNodes.length > 100) {
+                log.removeChild(log.firstChild);
+            }
+        }
+        
+        async function pingService() {
+            const status = document.getElementById('status');
+            
+            try {
+                addLog(`Pinging ${serviceUrl}/ping...`);
+                const startTime = Date.now();
+                const response = await fetch(`${serviceUrl}/ping?browser=true&t=${Date.now()}`);
+                const timeElapsed = Date.now() - startTime;
+                
+                if (response.ok) {
+                    pingCount++;
+                    status.className = 'status success';
+                    status.textContent = `Service is UP! Ping count: ${pingCount}, Errors: ${errorCount}`;
+                    addLog(`Ping successful (${timeElapsed}ms)`);
+                    
+                    // Occasionally ping the health endpoint too
+                    if (pingCount % 5 === 0) {
+                        try {
+                            const healthResponse = await fetch(`${serviceUrl}/health?t=${Date.now()}`);
+                            if (healthResponse.ok) {
+                                const data = await healthResponse.json();
+                                addLog(`Health check: ${JSON.stringify(data).substring(0, 100)}...`);
+                            }
+                        } catch (healthErr) {
+                            addLog(`Health check failed: ${healthErr.message}`, true);
+                        }
+                    }
+                } else {
+                    errorCount++;
+                    status.className = 'status error';
+                    status.textContent = `Error: ${response.status} ${response.statusText}`;
+                    addLog(`Error response: ${response.status}`, true);
+                }
+            } catch (err) {
+                errorCount++;
+                status.className = 'status error';
+                status.textContent = `Connection failed! Errors: ${errorCount}`;
+                addLog(`Connection failed: ${err.message}`, true);
+            }
+        }
+        
+        function startAutoPing() {
+            const interval = parseInt(document.getElementById('interval').value) * 1000;
+            if (pingTimer) clearInterval(pingTimer);
+            pingTimer = setInterval(pingService, interval);
+            addLog(`Auto-ping started (every ${interval/1000}s)`);
+        }
+        
+        // Initial ping
+        pingService();
+        
+        // Start auto-ping
+        startAutoPing();
+        
+        // Setup UI controls
+        document.getElementById('ping-now').addEventListener('click', pingService);
+        
+        document.getElementById('toggle-auto').addEventListener('click', function() {
+            const toggleBtn = document.getElementById('toggle-auto');
+            if (autoPingEnabled) {
+                clearInterval(pingTimer);
+                pingTimer = null;
+                autoPingEnabled = false;
+                toggleBtn.textContent = 'Resume Auto-Ping';
+                addLog('Auto-ping paused');
+            } else {
+                startAutoPing();
+                autoPingEnabled = true;
+                toggleBtn.textContent = 'Pause Auto-Ping';
+                addLog('Auto-ping resumed');
+            }
+        });
+        
+        document.getElementById('interval').addEventListener('change', function() {
+            if (autoPingEnabled) {
+                startAutoPing();
+                addLog(`Ping interval updated to ${this.value} seconds`);
+            }
+        });
+        
+        // Make the log more interesting by showing activity even when not pinging
+        setInterval(() => {
+            if (Math.random() < 0.3) {
+                const messages = [
+                    'Monitoring service status...',
+                    'Keeping connection alive...',
+                    'Preventing service shutdown...',
+                    'Service monitoring active...'
+                ];
+                const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                addLog(randomMessage);
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
